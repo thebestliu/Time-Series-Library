@@ -51,9 +51,13 @@ class Dataset_ETT_hour(Dataset):
         df_raw = pd.read_csv(os.path.join(self.root_path,
                                           self.data_path))
 
+        # 训练、验证、测试数据集开始边界
         border1s = [0, 12 * 30 * 24 - self.seq_len, 12 * 30 * 24 + 4 * 30 * 24 - self.seq_len]
+        # 训练、验证、测试数据集结束边界
         border2s = [12 * 30 * 24, 12 * 30 * 24 + 4 * 30 * 24, 12 * 30 * 24 + 8 * 30 * 24]
+        # 数据集开始索引
         border1 = border1s[self.set_type]
+        # 数据集结束索引
         border2 = border2s[self.set_type]
 
         if self.features == 'M' or self.features == 'MS':

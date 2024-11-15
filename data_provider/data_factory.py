@@ -23,11 +23,13 @@ def data_provider(args, flag):
     Data = data_dict[args.data]
     timeenc = 0 if args.embed != 'timeF' else 1
 
+    # shuffle_flag：控制是否在每个epoch中随机打乱数据顺序
     shuffle_flag = False if (flag == 'test' or flag == 'TEST') else True
     drop_last = False
     batch_size = args.batch_size
     freq = args.freq
 
+    # anomaly_detection 异常检测
     if args.task_name == 'anomaly_detection':
         drop_last = False
         data_set = Data(

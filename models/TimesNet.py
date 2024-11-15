@@ -8,13 +8,24 @@ from layers.Conv_Blocks import Inception_Block_V1
 
 def FFT_for_Period(x, k=2):
     # [B, T, C]
+    # dim为1表示在时间维度T上进行FFT计算，xf的形状仍是[B, T, C]
     xf = torch.fft.rfft(x, dim=1)
     # find period by amplitudes
+    # abs(xf)计算出每个频率成分的幅值
+    # .mean(0)代表在第一个维度即B维度上进行平均，目的为了去除样本之间差异，张量形状从[B, T, C]变成[T, C]
+    # .mean(-1)代表在最后一个维度即C维度上平均，这一步是在不同特征之间取平均，的带在所有特征之间的平均幅值。张量形状从[T, C]变成了[T]
+    # 最终结果得到了包含T个频率未知的平均幅值序列，每个位置的值代表整个batch和所有特征上的总体幅值特征
     frequency_list = abs(xf).mean(0).mean(-1)
+    # 直流分量是指信号在频率为零时的成分，我们更关心周期的变化，period = T // f （f != 0），设置0防止频率为0的值被top_k选中
     frequency_list[0] = 0
+    # _是返回topK寻找到的最大幅值，top_list是找到值的索引位置，使用_的意思是忽略掉第一个返回值只保留位置信息
     _, top_list = torch.topk(frequency_list, k)
+    # 将 top_list 从计算图中分离（不再跟踪梯度），并转移到CPU上，然后转换为NumPy数组，便于后续处理。
     top_list = top_list.detach().cpu().numpy()
+    # 计算周期长度，就是每个频率对应的周期长度
     period = x.shape[1] // top_list
+    # 返回包含top_k个主频率的周期长度
+    # abs(xf).mean(-1)[:, top_list] ： 每条数据在top_k个主频率的幅值
     return period, abs(xf).mean(-1)[:, top_list]
 
 
