@@ -1,5 +1,6 @@
-import torch
-import torch.nn as nn
+import torch # type: ignore
+import torch.nn as nn # type: ignore
+import torch.nn.functional as F # type: ignore
 
 
 class Inception_Block_V1(nn.Module):
@@ -16,7 +17,7 @@ class Inception_Block_V1(nn.Module):
             self._initialize_weights()
 
     def _initialize_weights(self):
-        for m in self.modules():
+        for m in self.modules(): # 遍历所有子模块
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
                 if m.bias is not None:
@@ -26,7 +27,11 @@ class Inception_Block_V1(nn.Module):
         res_list = []
         for i in range(self.num_kernels):
             res_list.append(self.kernels[i](x))
-        res = torch.stack(res_list, dim=-1).mean(-1)
+        # 调用 torch.stack(res, dim=-1) 后，这些张量将沿着最后一个维度堆叠，例如3个[2,4]张量经过stack变成[2,4,3]
+        # res =  res.mean(-1)，在最后一个维度上做均值
+        res = torch.stack(res_list, dim=-1)
+        res = res.mean(-1)
+        # res形状[B, N, length of period, period]
         return res
 
 
