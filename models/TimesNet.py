@@ -14,7 +14,7 @@ def FFT_for_Period(x, k=2):
     # abs(xf)计算出每个频率成分的幅值
     # .mean(0)代表在第一个维度即B维度上进行平均，目的为了去除样本之间差异，张量形状从[B, T, C]变成[T, C]
     # .mean(-1)代表在最后一个维度即C维度上平均，这一步是在不同特征之间取平均，的带在所有特征之间的平均幅值。张量形状从[T, C]变成了[T]
-    # 最终结果得到了包含T个频率未知的平均幅值序列，每个位置的值代表整个batch和所有特征上的总体幅值特征
+    # 最终结果得到了包含T个频率未知的平均幅值序列，每个位置的值代表整个batch和所有特征上的总体幅值特征，是一维的
     frequency_list = abs(xf).mean(0).mean(-1)
     # 直流分量是指信号在频率为零时的成分，我们更关心周期的变化，period = T // f （f != 0），设置0防止频率为0的值被top_k选中
     frequency_list[0] = 0
@@ -45,6 +45,7 @@ class TimesBlock(nn.Module):
         )
 
     def forward(self, x):
+        #B: batch size  T: length of time series（seq + pre）  N:number of features(被转换为d_model了)
         B, T, N = x.size()
         # period_list:周期长度,一维数值
         # period_weight: [B, k] 每个值代表的是在某个Batch上的幅值，
@@ -68,8 +69,7 @@ class TimesBlock(nn.Module):
             # reshape
             # 这句话目的是让N成为第二维度，N也可理解为channels，为了满足2D卷积的输入格式，即【batch_size,channels,height,width】Height代表行数、width代表列数
             # out形状 B, N, length of period, period
-            out = out.reshape(B, length // period, period,
-                              N).permute(0, 3, 1, 2).contiguous()
+            out = out.reshape(B, length // period, period, N).permute(0, 3, 1, 2).contiguous()
             # 2D conv: from 1d Variation to 2d Variation
             out = self.conv(out)
             # reshape back, similar to reshape
@@ -150,7 +150,7 @@ class Model(nn.Module):
             torch.var(x_enc, dim=1, keepdim=True, unbiased=False) + 1e-5)
         x_enc /= stdev
 
-        # embedding
+        # embedding, 得到的C是嵌入后的d_model
         enc_out = self.enc_embedding(x_enc, x_mark_enc)  # [B,T,C]
         # 将T放到最后一个维度进行线性预测然后再换回[B, T, C]
         enc_out = self.predict_linear(enc_out.permute(0, 2, 1)).permute(

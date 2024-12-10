@@ -48,17 +48,20 @@ class DSAttention(nn.Module):
 class FullAttention(nn.Module):
     def __init__(self, mask_flag=True, factor=5, scale=None, attention_dropout=0.1, output_attention=False):
         super(FullAttention, self).__init__()
-        self.scale = scale
+        self.scale = scale  # 缩放因子，用于稳定注意力分数
         self.mask_flag = mask_flag
         self.output_attention = output_attention
         self.dropout = nn.Dropout(attention_dropout)
 
     def forward(self, queries, keys, values, attn_mask, tau=None, delta=None):
-        B, L, H, E = queries.shape
-        _, S, _, D = values.shape
+        B, L, H, E = queries.shape # B: batch_size, L: query序列长度, H: 注意力头数, E: 每个头的嵌入维度
+        _, S, _, D = values.shape  # S: key/value序列长度, D: value的维度
         scale = self.scale or 1. / sqrt(E)
 
-        scores = torch.einsum("blhe,bshe->bhls", queries, keys)
+        scores = torch.einsum("blhe,bshe->bhls", queries, keys) 	# torch.einsum：爱因斯坦求和表示法，用于高效计算点积注意力。
+        # 	blhe：表示 queries 的维度顺序（batch, length, head, embedding）。
+        #   bshe：表示 keys 的维度顺序（batch, sequence, head, embedding）
+        #   bhls：输出形状，表示每个头的 query 和 key 之间的相似性得分矩阵
 
         if self.mask_flag:
             if attn_mask is None:

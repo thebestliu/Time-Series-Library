@@ -21,7 +21,7 @@ class Model(nn.Module):
         self.enc_embedding = DataEmbedding_inverted(configs.seq_len, configs.d_model, configs.embed, configs.freq,
                                                     configs.dropout)
         # Encoder
-        self.encoder = Encoder(
+        self. encoder = Encoder(
             [       # 创建一个列表，其中每个元素都是一个 EncoderLayer
                 EncoderLayer(
                     AttentionLayer(     # 每个 EncoderLayer 包含一个注意力层 (AttentionLayer) , 它负责将 FullAttention 封装为一个多头注意力层，处理多个头的注意力计算。
